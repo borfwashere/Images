@@ -2,55 +2,38 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Borf Explorer</title>
     <style>
-        :root { --win-gray: #c0c0c0; --win-border-dark: #808080; }
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
-        body { background: #fff; font-family: 'Tahoma', sans-serif; overflow-y: auto; padding: 10px; }
-        
-        #explorerView { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-            gap: 10px; 
-        }
-
-        .img-item { width: 110px; cursor: pointer; text-align: center; padding: 5px; }
-        .img-item:hover { background-color: #000080; color: #fff; }
-
-        .thumb-container { 
-            width: 100px; height: 80px; background: #f0f0f0; 
-            border: 1px solid var(--win-border-dark); 
-            display: flex; align-items: center; justify-content: center; 
-            overflow: hidden; pointer-events: none;
-        }
-
-        .thumb-container img { max-width: 100%; max-height: 100%; object-fit: cover; }
-        .img-name { font-size: 10px; margin-top: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { background: #fff; font-family: 'Tahoma', sans-serif; padding: 10px; overflow-x: hidden; }
+        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .item { width: 100px; cursor: pointer; text-align: center; }
+        .item:hover .thumb { border-color: #000080; background: #e5e5ff; }
+        .item:hover .name { background: #000080; color: #fff; }
+        .thumb { width: 100px; height: 80px; border: 1px solid #808080; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f0f0f0; transition: 0.1s; }
+        .thumb img { max-width: 90%; max-height: 90%; object-fit: contain; pointer-events: none; image-rendering: pixelated; }
+        .name { font-size: 10px; margin-top: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px; }
     </style>
 </head>
 <body oncontextmenu="return false;">
-
-    <div id="explorerView"></div>
-
+    <div id="grid"></div>
     <script>
-        const GITHUB_API = "https://api.github.com/repos/borfwashere/Images/contents/";
-        
-        async function scan() {
-            const res = await fetch(GITHUB_API);
-            const data = await res.json();
-            const photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
-            
-            const ev = document.getElementById('explorerView');
-            photos.forEach(p => {
-                const d = document.createElement('div');
-                d.className = 'img-item';
-                // Enviamos el mensaje al padre (Borsec Station)
-                d.onclick = () => window.parent.postMessage({action: 'openPhoto', url: p.download_url, name: p.name}, '*');
-                d.innerHTML = `<div class="thumb-container"><img src="${p.download_url}"></div><span class="img-name">${p.name}</span>`;
-                ev.appendChild(d);
-            });
+        const API = "https://api.github.com/repos/borfwashere/Images/contents/";
+        async function load() {
+            try {
+                const res = await fetch(API);
+                const data = await res.json();
+                const photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+                const container = document.getElementById('grid');
+                photos.forEach(p => {
+                    const d = document.createElement('div');
+                    d.className = 'item';
+                    d.onclick = () => window.parent.postMessage({action: 'view', url: p.download_url, name: p.name}, '*');
+                    d.innerHTML = `<div class="thumb"><img src="${p.download_url}"></div><span class="name">${p.name}</span>`;
+                    container.appendChild(d);
+                });
+            } catch (e) { console.error("Error cargando repositorio"); }
         }
-        scan();
+        load();
     </script>
 </body>
 </html>
