@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borf Auto-Images Program</title>
+    <title>Borf Auto-Scanner</title>
     <style>
         :root { --win-gray: #c0c0c0; --win-border-light: #ffffff; --win-border-dark: #808080; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Tahoma', sans-serif; background-color: #fff; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* Explorador */
+        /* Grid de Imágenes */
         #explorerView { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; overflow-y: auto; }
         .img-item { width: 150px; cursor: pointer; text-align: center; padding: 5px; border: 1px solid transparent; }
         .img-item:hover { background-color: #e5e5ff; border: 1px solid #b2b2ff; }
@@ -16,12 +16,12 @@
         .thumb-container img { max-width: 100%; max-height: 100%; object-fit: cover; }
         .img-name { font-size: 11px; color: #000; word-wrap: break-word; display: block; }
 
-        /* Visor */
+        /* Visor Pantalla Negra */
         #photoViewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; z-index: 9999; }
         .viewer-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
-        #activeImage { max-width: 98%; max-height: 92%; }
+        #activeImage { max-width: 98%; max-height: 92%; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .viewer-footer { height: 45px; background: var(--win-gray); border-top: 2px solid var(--win-border-light); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        .btn-win { height: 26px; padding: 0 15px; background: var(--win-gray); border: 2px outset var(--win-border-light); font-size: 12px; cursor: pointer; font-weight: bold; }
+        .btn-win { height: 26px; padding: 0 15px; background: var(--win-gray); border: 2px outset var(--win-border-light); font-size: 12px; cursor: pointer; font-weight: bold; font-family: 'Tahoma'; }
         .btn-win:active { border: 2px inset var(--win-border-light); }
         .viewer-info { font-size: 11px; color: #000; font-weight: bold; }
     </style>
@@ -29,7 +29,7 @@
 <body>
 
     <div id="explorerView">
-        <div id="status">Escaneando repositorio...</div>
+        <div id="status" style="padding:20px; color: #000;">Escaneando repositorio de Borsec...</div>
     </div>
 
     <div id="photoViewer">
@@ -43,82 +43,69 @@
                 <span id="counter" class="viewer-info">0 / 0</span>
                 <button class="btn-win" onclick="nav(1)">Siguiente</button>
             </div>
-            <div id="fileName" class="viewer-info">file.jpg</div>
+            <div id="fileName" class="viewer-info" style="min-width:120px; text-align:right;">archivo.png</div>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN AUTOMÁTICA
-        const REPO_OWNER = "borfwashere";
-        const REPO_NAME = "Images";
-        const GITHUB_API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
+        // Esta URL lee directamente el contenido de tu carpeta sin necesidad de un archivo JSON
+        const GITHUB_API = "https://api.github.com/repos/borfwashere/Images/contents/";
 
         let photos = [];
         let currentIdx = 0;
 
-        async function autoDetectImages() {
+        async function scanRepo() {
             const explorer = document.getElementById('explorerView');
             try {
-                const res = await fetch(GITHUB_API_URL);
-                const files = await res.json();
+                const res = await fetch(GITHUB_API);
+                const data = await res.json();
                 
-                // Filtramos solo archivos de imagen
-                photos = files.filter(file => 
-                    file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+                // Filtramos solo archivos que terminen en extensiones de imagen
+                photos = data.filter(file => 
+                    file.name.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)
                 ).map(file => ({
                     name: file.name,
                     url: file.download_url
                 }));
 
-                renderGallery();
+                render();
             } catch (e) {
-                explorer.innerHTML = "<div style='color:red; padding:20px;'>Error al conectar con la API de GitHub.</div>";
+                explorer.innerHTML = "<div style='color:red; padding:20px;'>Error: No se pudo conectar con GitHub.</div>";
             }
         }
 
-        function renderGallery() {
+        function render() {
             const explorer = document.getElementById('explorerView');
             explorer.innerHTML = "";
             if (photos.length === 0) {
-                explorer.innerHTML = "No se encontraron imágenes en el repositorio.";
+                explorer.innerHTML = "<div style='padding:20px;'>No hay imágenes en la raíz del repositorio.</div>";
                 return;
             }
-            photos.forEach((photo, i) => {
-                const item = document.createElement('div');
-                item.className = 'img-item';
-                item.onclick = () => openViewer(i);
-                item.innerHTML = `
-                    <div class="thumb-container">
-                        <img src="${photo.url}" loading="lazy">
-                    </div>
-                    <span class="img-name">${photo.name}</span>
-                `;
-                explorer.appendChild(item);
+            photos.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'img-item';
+                div.onclick = () => open(i);
+                div.innerHTML = `<div class="thumb-container"><img src="${p.url}" loading="lazy"></div><span class="img-name">${p.name}</span>`;
+                explorer.appendChild(div);
             });
         }
 
-        function openViewer(i) {
+        function open(i) {
             currentIdx = i;
-            updateViewer();
+            const p = photos[currentIdx];
+            document.getElementById('activeImage').src = p.url;
+            document.getElementById('fileName').innerText = p.name;
+            document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
             document.getElementById('photoViewer').style.display = "flex";
         }
 
-        function closeViewer() {
-            document.getElementById('photoViewer').style.display = "none";
-        }
-
-        function updateViewer() {
-            const photo = photos[currentIdx];
-            document.getElementById('activeImage').src = photo.url;
-            document.getElementById('fileName').innerText = photo.name;
-            document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
-        }
+        function closeViewer() { document.getElementById('photoViewer').style.display = "none"; }
 
         function nav(step) {
             currentIdx += step;
             if (currentIdx >= photos.length) currentIdx = 0;
             if (currentIdx < 0) currentIdx = photos.length - 1;
-            updateViewer();
+            open(currentIdx);
         }
 
         window.addEventListener('keydown', (e) => {
@@ -129,7 +116,7 @@
             }
         });
 
-        autoDetectImages();
+        scanRepo();
     </script>
 </body>
 </html>
