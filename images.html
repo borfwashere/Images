@@ -25,16 +25,16 @@
         #explorerView { 
             flex: 1; padding: 15px; 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
             gap: 15px; overflow-y: auto;
             background: #fff;
         }
 
-        .img-item { width: 130px; cursor: pointer; text-align: center; padding: 5px; border: 1px solid transparent; }
+        .img-item { width: 120px; cursor: pointer; text-align: center; padding: 5px; border: 1px solid transparent; }
         .img-item:hover { background-color: #000080; color: #fff; border: 1px dotted #fff; }
 
         .thumb-container { 
-            width: 120px; height: 100px; background: #f0f0f0; 
+            width: 110px; height: 90px; background: #f0f0f0; 
             border: 1px solid var(--win-border-dark); 
             display: flex; align-items: center; justify-content: center; 
             overflow: hidden; pointer-events: none;
@@ -51,37 +51,29 @@
 
         .viewer-body { 
             flex: 1; display: flex; align-items: center; justify-content: center; 
-            overflow: auto; /* Permite scroll cuando hay zoom */
-            cursor: zoom-in;
-            padding-bottom: 50px; /* Espacio para que la imagen no tape los botones */
+            padding-bottom: 85px; /* Espacio extra para subir los botones sobre la barra de tareas */
         }
         
         #activeImage { 
-            max-width: 100%; max-height: 100%; 
-            transition: transform 0.2s ease;
+            max-width: 95%; max-height: 85%; 
             pointer-events: none;
         }
 
-        /* Zoom activo */
-        .zoomed #activeImage {
-            max-width: none;
-            max-height: none;
-            transform: scale(1);
-        }
-        .zoomed .viewer-body { cursor: zoom-out; }
-
-        /* Barra de herramientas inferior (SIEMPRE VISIBLE) */
+        /* Barra de herramientas inferior (Subida para evitar la barra de tareas) */
         .viewer-footer { 
-            position: absolute; bottom: 0; left: 0;
-            width: 100%; height: 45px; 
+            position: absolute; 
+            bottom: 40px; /* IMPORTANTE: Esto sube los botones para que no los tape la fos-bar */
+            left: 0;
+            width: 100%; height: 40px; 
             background: var(--win-gray); 
             border-top: 2px solid var(--win-border-light); 
+            border-bottom: 2px solid var(--win-border-dark);
             display: flex; align-items: center; justify-content: space-between; 
             padding: 0 15px; z-index: 10000;
         }
 
         .btn-win { 
-            height: 26px; padding: 0 10px; background: var(--win-gray); 
+            height: 24px; padding: 0 10px; background: var(--win-gray); 
             border: 2px outset var(--win-border-light); 
             font-size: 11px; font-weight: bold; cursor: pointer; 
             font-family: 'Tahoma'; color: #000;
@@ -90,9 +82,9 @@
         .info-label { font-size: 10px; color: #000; font-weight: bold; }
 
         /* Scrollbar estilo Retro */
-        #explorerView::-webkit-scrollbar, .viewer-body::-webkit-scrollbar { width: 16px; height: 16px; }
-        #explorerView::-webkit-scrollbar-track, .viewer-body::-webkit-scrollbar-track { background: #dfdfdf; }
-        #explorerView::-webkit-scrollbar-thumb, .viewer-body::-webkit-scrollbar-thumb {
+        #explorerView::-webkit-scrollbar { width: 16px; }
+        #explorerView::-webkit-scrollbar-track { background: #dfdfdf; }
+        #explorerView::-webkit-scrollbar-thumb {
             background: var(--win-gray); border: 2px outset #fff;
         }
     </style>
@@ -104,7 +96,7 @@
     </div>
 
     <div id="photoViewer">
-        <div class="viewer-body" id="vBody" onclick="toggleZoom()">
+        <div class="viewer-body" onclick="nav(1)">
             <img id="activeImage" src="" alt="">
         </div>
         <div class="viewer-footer">
@@ -122,18 +114,9 @@
         const GITHUB_API = "https://api.github.com/repos/borfwashere/Images/contents/";
         let photos = [];
         let currentIdx = 0;
-        let isZoomed = false;
 
-        // --- BLOQUEO TOTAL DE CLIC DERECHO Y TECLAS ---
-        window.oncontextmenu = function() { return false; };
+        // --- BLOQUEO TOTAL DE CLIC DERECHO ---
         document.addEventListener('contextmenu', e => e.preventDefault());
-
-        document.addEventListener('keydown', (e) => {
-            if (e.keyCode == 123 || (e.ctrlKey && [85, 83, 73, 74].includes(e.keyCode))) {
-                e.preventDefault();
-                return false;
-            }
-        });
 
         async function scan() {
             try {
@@ -161,8 +144,6 @@
 
         function openImg(i) {
             currentIdx = i;
-            isZoomed = false;
-            document.getElementById('photoViewer').classList.remove('zoomed');
             document.getElementById('activeImage').src = photos[currentIdx].url;
             document.getElementById('fileName').innerText = photos[currentIdx].name;
             document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
@@ -179,16 +160,7 @@
             openImg(currentIdx);
         }
 
-        function toggleZoom() {
-            isZoomed = !isZoomed;
-            const viewer = document.getElementById('photoViewer');
-            if (isZoomed) {
-                viewer.classList.add('zoomed');
-            } else {
-                viewer.classList.remove('zoomed');
-            }
-        }
-
+        // Navegación teclado
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('photoViewer').style.display === "flex") {
                 if (e.key === "ArrowRight") nav(1);
