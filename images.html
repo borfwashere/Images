@@ -3,57 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borf Photo System</title>
+    <title>Borf Private Files</title>
     <style>
         :root { 
             --win-gray: #c0c0c0; 
             --win-border-light: #ffffff; 
             --win-border-dark: #808080; 
             --win-blue: #000080; 
+            /* Proporción fija del visor (puedes ajustar estos valores) */
+            --viewer-width: 700px; 
+            --viewer-height: 550px;
         }
         
-        /* BLOQUEO TOTAL DE SELECCIÓN VISUAL */
+        /* BLOQUEO TOTAL DE SELECCIÓN VISUAL (Como pediste, ya no se ve azul) */
         * { 
             margin: 0; padding: 0; box-sizing: border-box; 
             user-select: none; 
             -webkit-user-select: none;
             -webkit-user-drag: none; 
-            outline: none; /* Elimina el cuadro azul al hacer click */
-            -webkit-tap-highlight-color: transparent; /* Elimina destello en móviles */
+            outline: none; 
+            -webkit-tap-highlight-color: transparent; 
         }
         
         body, html { 
             width: 100%; height: 100%; 
             font-family: 'Tahoma', sans-serif; 
-            background-color: #fff; 
+            background-color: #fff; /* Fondo blanco puro */
             overflow: hidden; 
             display: flex; flex-direction: column; 
+            position: relative;
         }
 
-        /* Contenedor principal (Blanco como una carpeta real) */
+        /* Contenedor principal de la carpeta */
         #explorer { 
             flex: 1; 
-            padding: 15px; 
+            padding: 20px; 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-            gap: 10px; 
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+            gap: 15px; 
             overflow-y: auto; 
             background: #fff;
+            z-index: 1; /* Fondo blanco */
         }
         
-        /* Estilo de los items de archivos */
+        /* Items de archivos limpios (Hover sutil) */
         .file-item { 
-            width: 105px; 
+            width: 110px; 
             text-align: center; 
             cursor: pointer; 
-            padding: 4px;
+            padding: 5px;
             border: 1px solid transparent; 
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         
-        /* Hover estilo Win98: Solo un borde punteado o cambio de color suave, sin bloques azules feos */
+        /* Hover elegante, sin bloques azules */
         .file-item:hover .icon-plate {
             border-color: var(--win-blue);
         }
@@ -63,8 +68,8 @@
         }
         
         .icon-plate { 
-            width: 90px; 
-            height: 70px; 
+            width: 100px; 
+            height: 80px; 
             background: #fdfdfd; 
             border: 1px solid var(--win-border-dark); 
             display: flex; 
@@ -72,14 +77,12 @@
             justify-content: center; 
             overflow: hidden; 
             pointer-events: none;
-            transition: border-color 0.1s;
         }
         
         .icon-plate img { 
             max-width: 95%; 
             max-height: 95%; 
             object-fit: contain; 
-            image-rendering: auto;
         }
         
         .file-name { 
@@ -93,25 +96,39 @@
             color: #000;
         }
 
-        /* --- VENTANA DEL VISOR --- */
+        /* --- NUEVA VENTANA DEL VISOR FLOTANTE --- */
         #viewerWin { 
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%; 
+            position: fixed; 
+            /* Centrado absoluto */
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%); 
+            
+            /* Proporción fija */
+            width: var(--viewer-width);
+            height: var(--viewer-height);
+            
+            /* Capacidad de respuesta para pantallas pequeñas */
+            max-width: 95vw;
+            max-height: 90vh;
+            
             background: var(--win-gray);
+            border: 3px outset var(--win-border-light); /* Borde Win98 grueso */
             display: none; 
             flex-direction: column; 
-            z-index: 1000;
+            z-index: 1000; /* Encima de la carpeta */
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.5); /* Sombra para dar profundidad */
         }
 
         .win-title { 
             background: var(--win-blue); 
             color: white; 
-            padding: 4px 8px; 
+            padding: 3px 8px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             font-weight: bold; 
             font-size: 12px; 
+            cursor: move; /* Indica que se puede mover (aunque no tenga drag activo) */
         }
         
         .close-btn { 
@@ -124,23 +141,25 @@
             align-items: center; 
             justify-content: center; 
             cursor: pointer; 
+            font-weight: bold;
         }
         .close-btn:active { border: 2px inset #fff; padding: 1px 0 0 1px; }
 
         .win-body { 
             flex: 1; 
-            background: #000; 
-            overflow: auto; 
+            background: #000; /* Fondo negro para la foto */
+            overflow: hidden; /* No queremos scroll aquí */
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            cursor: pointer;
+            padding: 10px; /* Margen para que la foto no toque el borde */
         }
         
         #activeImg { 
             max-width: 100%; 
             max-height: 100%; 
-            pointer-events: none;
+            object-fit: contain; /* Mantiene proporción siempre */
+            pointer-events: none; /* Imposible guardar o arrastrar */
         }
 
         .win-footer { 
@@ -153,8 +172,8 @@
         }
         
         .nav-btn { 
-            height: 24px; 
-            padding: 0 12px; 
+            height: 25px; 
+            padding: 0 15px; 
             background: var(--win-gray); 
             border: 2px outset #fff; 
             font-family: 'Tahoma'; 
@@ -163,12 +182,13 @@
             cursor: pointer; 
         }
         .nav-btn:active { border: 2px inset #fff; }
+        .counter-label { font-size: 11px; font-weight: bold; color: #000; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="explorer">
-        <div style="color: #808080; padding: 20px; font-size: 11px;">Buscando archivos...</div>
+        <div style="color: #808080; padding: 20px; font-size: 11px;">Buscando fotos en el repositorio...</div>
     </div>
 
     <div id="viewerWin">
@@ -176,12 +196,12 @@
             <span id="winTitleText">Borf Viewer</span>
             <div class="close-btn" onclick="closeViewer()">X</div>
         </div>
-        <div class="win-body" onclick="nav(1)">
+        <div class="win-body">
             <img id="activeImg" src="">
         </div>
         <div class="win-footer">
             <button class="nav-btn" onclick="nav(-1)">ANT</button>
-            <span id="counter" style="font-size: 11px; font-weight: bold; color: #000;">0 / 0</span>
+            <span id="counter" class="counter-label">0 / 0</span>
             <button class="nav-btn" onclick="nav(1)">SIG</button>
         </div>
     </div>
@@ -195,17 +215,22 @@
             try {
                 const res = await fetch(API);
                 const data = await res.json();
+                // Filtramos archivos de imagen
                 photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
                              .map(f => ({ name: f.name, url: f.download_url }));
                 render();
             } catch (e) {
-                document.getElementById('explorer').innerHTML = "Error de conexión.";
+                document.getElementById('explorer').innerHTML = "Error de conexión con GitHub.";
             }
         }
 
         function render() {
             const exp = document.getElementById('explorer');
             exp.innerHTML = "";
+            if (photos.length === 0) {
+                exp.innerHTML = "<div style='padding:20px; color:#000;'>No hay imágenes en este repositorio.</div>";
+                return;
+            }
             photos.forEach((p, i) => {
                 const item = document.createElement('div');
                 item.className = 'file-item';
@@ -224,6 +249,7 @@
             img.src = photos[currentIdx].url;
             document.getElementById('winTitleText').innerText = photos[currentIdx].name;
             document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
+            // Mostramos la ventana flotante
             document.getElementById('viewerWin').style.display = "flex";
         }
 
@@ -237,7 +263,7 @@
             openViewer(currentIdx);
         }
 
-        // Bloqueo de teclado y click derecho
+        // Bloqueo de teclado (Esc para cerrar, flechas para navegar)
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('viewerWin').style.display === "flex") {
                 if (e.key === "ArrowRight") nav(1);
@@ -246,6 +272,7 @@
             }
         });
 
+        // Bloqueo total de click derecho
         document.addEventListener('contextmenu', e => e.preventDefault());
 
         init();
