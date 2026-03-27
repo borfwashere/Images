@@ -3,142 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borf Images Program</title>
+    <title>Borf Auto-Images Program</title>
     <style>
-        :root {
-            --win-gray: #c0c0c0;
-            --win-border-light: #ffffff;
-            --win-border-dark: #808080;
-        }
+        :root { --win-gray: #c0c0c0; --win-border-light: #ffffff; --win-border-dark: #808080; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Tahoma', sans-serif; background-color: #fff; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Explorador */
+        #explorerView { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; overflow-y: auto; }
+        .img-item { width: 150px; cursor: pointer; text-align: center; padding: 5px; border: 1px solid transparent; }
+        .img-item:hover { background-color: #e5e5ff; border: 1px solid #b2b2ff; }
+        .thumb-container { width: 140px; height: 120px; background: #f0f0f0; border: 1px solid var(--win-border-dark); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); margin: 0 auto 5px auto; }
+        .thumb-container img { max-width: 100%; max-height: 100%; object-fit: cover; }
+        .img-name { font-size: 11px; color: #000; word-wrap: break-word; display: block; }
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            font-family: 'Tahoma', sans-serif;
-            background-color: #fff;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* --- EXPLORADOR DE ARCHIVOS --- */
-        #explorerView {
-            flex: 1;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 25px;
-            overflow-y: auto;
-        }
-
-        .img-item {
-            width: 170px;
-            cursor: pointer;
-            text-align: center;
-            padding: 8px;
-            border: 1px solid transparent;
-            transition: background 0.1s;
-        }
-
-        .img-item:hover {
-            background-color: #e5e5ff;
-            border: 1px solid #b2b2ff;
-        }
-
-        .thumb-container {
-            width: 160px;
-            height: 140px;
-            background: #f0f0f0;
-            border: 1px solid var(--win-border-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
-            margin: 0 auto 8px auto;
-        }
-
-        .thumb-container img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: cover;
-        }
-
-        .img-name {
-            font-size: 12px;
-            color: #000;
-            word-wrap: break-word;
-            display: block;
-        }
-
-        /* --- VISOR DE PANTALLA COMPLETA --- */
-        #photoViewer {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #000;
-            display: none; 
-            flex-direction: column;
-            z-index: 9999;
-        }
-
-        .viewer-body {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        #activeImage {
-            max-width: 98%;
-            max-height: 92%;
-            image-rendering: auto;
-        }
-
-        .viewer-footer {
-            height: 45px;
-            background: var(--win-gray);
-            border-top: 2px solid var(--win-border-light);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-
-        .btn-win {
-            height: 26px;
-            padding: 0 15px;
-            background: var(--win-gray);
-            border: 2px outset var(--win-border-light);
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: 'Tahoma', sans-serif;
-        }
-
+        /* Visor */
+        #photoViewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; z-index: 9999; }
+        .viewer-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+        #activeImage { max-width: 98%; max-height: 92%; }
+        .viewer-footer { height: 45px; background: var(--win-gray); border-top: 2px solid var(--win-border-light); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .btn-win { height: 26px; padding: 0 15px; background: var(--win-gray); border: 2px outset var(--win-border-light); font-size: 12px; cursor: pointer; font-weight: bold; }
         .btn-win:active { border: 2px inset var(--win-border-light); }
-
         .viewer-info { font-size: 11px; color: #000; font-weight: bold; }
-
-        /* Scrollbar Windows Style */
-        #explorerView::-webkit-scrollbar { width: 16px; }
-        #explorerView::-webkit-scrollbar-track { background: #f1f1f1; }
-        #explorerView::-webkit-scrollbar-thumb {
-            background: var(--win-gray);
-            border: 2px outset #fff;
-        }
     </style>
 </head>
 <body>
 
     <div id="explorerView">
-        <div id="status">Cargando imágenes...</div>
+        <div id="status">Escaneando repositorio...</div>
     </div>
 
     <div id="photoViewer">
         <div class="viewer-body" onclick="nav(1)">
-            <img id="activeImage" src="" alt="Borf Viewer">
+            <img id="activeImage" src="" alt="Viewer">
         </div>
         <div class="viewer-footer">
             <button class="btn-win" onclick="closeViewer()">Cerrar</button>
@@ -147,52 +43,55 @@
                 <span id="counter" class="viewer-info">0 / 0</span>
                 <button class="btn-win" onclick="nav(1)">Siguiente</button>
             </div>
-            <div id="fileName" class="viewer-info" style="min-width: 100px; text-align: right;">file.jpg</div>
+            <div id="fileName" class="viewer-info">file.jpg</div>
         </div>
     </div>
 
     <script>
+        // CONFIGURACIÓN AUTOMÁTICA
+        const REPO_OWNER = "borfwashere";
+        const REPO_NAME = "Images";
+        const GITHUB_API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
+
         let photos = [];
         let currentIdx = 0;
 
-        const explorer = document.getElementById('explorerView');
-        const viewer = document.getElementById('photoViewer');
-        const activeImg = document.getElementById('activeImage');
-        const counter = document.getElementById('counter');
-        const fileNameDisp = document.getElementById('fileName');
-        const statusDisp = document.getElementById('status');
-
-        // Carga el index.json desde la misma carpeta del repo
-        async function loadImages() {
+        async function autoDetectImages() {
+            const explorer = document.getElementById('explorerView');
             try {
-                const res = await fetch('index.json');
-                if (!res.ok) throw new Error();
-                photos = await res.json();
+                const res = await fetch(GITHUB_API_URL);
+                const files = await res.json();
+                
+                // Filtramos solo archivos de imagen
+                photos = files.filter(file => 
+                    file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+                ).map(file => ({
+                    name: file.name,
+                    url: file.download_url
+                }));
+
                 renderGallery();
             } catch (e) {
-                statusDisp.innerHTML = `<div style="color:red; font-size:14px;">
-                    <b>ERROR:</b> No se encontró "index.json".<br><br>
-                    Crea un archivo llamado <b>index.json</b> en este repositorio con la lista de tus fotos:<br>
-                    ["foto1.jpg", "foto2.png"]
-                </div>`;
+                explorer.innerHTML = "<div style='color:red; padding:20px;'>Error al conectar con la API de GitHub.</div>";
             }
         }
 
         function renderGallery() {
+            const explorer = document.getElementById('explorerView');
             explorer.innerHTML = "";
             if (photos.length === 0) {
-                explorer.innerHTML = "La carpeta está vacía.";
+                explorer.innerHTML = "No se encontraron imágenes en el repositorio.";
                 return;
             }
-            photos.forEach((name, i) => {
+            photos.forEach((photo, i) => {
                 const item = document.createElement('div');
                 item.className = 'img-item';
                 item.onclick = () => openViewer(i);
                 item.innerHTML = `
                     <div class="thumb-container">
-                        <img src="${name}" loading="lazy">
+                        <img src="${photo.url}" loading="lazy">
                     </div>
-                    <span class="img-name">${name}</span>
+                    <span class="img-name">${photo.name}</span>
                 `;
                 explorer.appendChild(item);
             });
@@ -201,19 +100,18 @@
         function openViewer(i) {
             currentIdx = i;
             updateViewer();
-            viewer.style.display = "flex";
+            document.getElementById('photoViewer').style.display = "flex";
         }
 
         function closeViewer() {
-            viewer.style.display = "none";
-            activeImg.src = ""; 
+            document.getElementById('photoViewer').style.display = "none";
         }
 
         function updateViewer() {
-            const name = photos[currentIdx];
-            activeImg.src = name;
-            fileNameDisp.innerText = name;
-            counter.innerText = `${currentIdx + 1} / ${photos.length}`;
+            const photo = photos[currentIdx];
+            document.getElementById('activeImage').src = photo.url;
+            document.getElementById('fileName').innerText = photo.name;
+            document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
         }
 
         function nav(step) {
@@ -223,16 +121,15 @@
             updateViewer();
         }
 
-        // Navegación por teclado
         window.addEventListener('keydown', (e) => {
-            if (viewer.style.display === "flex") {
+            if (document.getElementById('photoViewer').style.display === "flex") {
                 if (e.key === "ArrowRight") nav(1);
                 if (e.key === "ArrowLeft") nav(-1);
                 if (e.key === "Escape") closeViewer();
             }
         });
 
-        loadImages();
+        autoDetectImages();
     </script>
 </body>
 </html>
