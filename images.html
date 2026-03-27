@@ -7,11 +7,10 @@
     <style>
         :root { --win-gray: #c0c0c0; --win-border-light: #ffffff; --win-border-dark: #808080; }
         
-        /* Bloqueo de selección y cursor */
         * { 
             margin: 0; padding: 0; box-sizing: border-box;
             user-select: none; -webkit-user-select: none;
-            -webkit-user-drag: none;
+            -webkit-user-drag: none; outline: none;
         }
 
         body, html { 
@@ -22,72 +21,100 @@
             display: flex; flex-direction: column;
         }
 
+        /* Explorador de miniaturas */
         #explorerView { 
-            flex: 1; padding: 20px; 
+            flex: 1; padding: 15px; 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-            gap: 20px; overflow-y: auto; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            gap: 15px; overflow-y: auto;
+            background: #fff;
         }
 
-        .img-item { width: 150px; cursor: pointer; text-align: center; padding: 5px; }
-        .img-item:hover { background-color: #000080; color: #fff; }
+        .img-item { width: 130px; cursor: pointer; text-align: center; padding: 5px; border: 1px solid transparent; }
+        .img-item:hover { background-color: #000080; color: #fff; border: 1px dotted #fff; }
 
         .thumb-container { 
-            width: 140px; height: 120px; background: #f0f0f0; 
+            width: 120px; height: 100px; background: #f0f0f0; 
             border: 1px solid var(--win-border-dark); 
             display: flex; align-items: center; justify-content: center; 
-            overflow: hidden; pointer-events: none; /* Evita que toquen la imagen */
+            overflow: hidden; pointer-events: none;
         }
 
         .thumb-container img { max-width: 100%; max-height: 100%; object-fit: cover; }
-        .img-name { font-size: 11px; margin-top: 5px; display: block; }
+        .img-name { font-size: 10px; margin-top: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* Visor Seguro */
+        /* Visor de Imágenes */
         #photoViewer { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: #000; display: none; flex-direction: column; z-index: 9999; 
         }
 
-        .viewer-body { flex: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .viewer-body { 
+            flex: 1; display: flex; align-items: center; justify-content: center; 
+            overflow: auto; /* Permite scroll cuando hay zoom */
+            cursor: zoom-in;
+            padding-bottom: 50px; /* Espacio para que la imagen no tape los botones */
+        }
         
         #activeImage { 
             max-width: 100%; max-height: 100%; 
-            pointer-events: none; /* Imposible hacer click derecho o arrastrar */
+            transition: transform 0.2s ease;
+            pointer-events: none;
         }
 
+        /* Zoom activo */
+        .zoomed #activeImage {
+            max-width: none;
+            max-height: none;
+            transform: scale(1);
+        }
+        .zoomed .viewer-body { cursor: zoom-out; }
+
+        /* Barra de herramientas inferior (SIEMPRE VISIBLE) */
         .viewer-footer { 
-            height: 40px; background: var(--win-gray); 
+            position: absolute; bottom: 0; left: 0;
+            width: 100%; height: 45px; 
+            background: var(--win-gray); 
             border-top: 2px solid var(--win-border-light); 
             display: flex; align-items: center; justify-content: space-between; 
-            padding: 0 20px; 
+            padding: 0 15px; z-index: 10000;
         }
 
         .btn-win { 
-            height: 24px; padding: 0 12px; background: var(--win-gray); 
+            height: 26px; padding: 0 10px; background: var(--win-gray); 
             border: 2px outset var(--win-border-light); 
             font-size: 11px; font-weight: bold; cursor: pointer; 
+            font-family: 'Tahoma'; color: #000;
         }
         .btn-win:active { border: 2px inset var(--win-border-light); }
+        .info-label { font-size: 10px; color: #000; font-weight: bold; }
+
+        /* Scrollbar estilo Retro */
+        #explorerView::-webkit-scrollbar, .viewer-body::-webkit-scrollbar { width: 16px; height: 16px; }
+        #explorerView::-webkit-scrollbar-track, .viewer-body::-webkit-scrollbar-track { background: #dfdfdf; }
+        #explorerView::-webkit-scrollbar-thumb, .viewer-body::-webkit-scrollbar-thumb {
+            background: var(--win-gray); border: 2px outset #fff;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="explorerView">
-        <div id="status" style="padding:20px;">Iniciando sistema de archivos...</div>
+        <div id="status" style="padding:20px;">Cargando archivos de Borsec...</div>
     </div>
 
     <div id="photoViewer">
-        <div class="viewer-body" onclick="nav(1)">
+        <div class="viewer-body" id="vBody" onclick="toggleZoom()">
             <img id="activeImage" src="" alt="">
         </div>
         <div class="viewer-footer">
             <button class="btn-win" onclick="closeViewer()">CERRAR</button>
             <div>
                 <button class="btn-win" onclick="nav(-1)">ANT</button>
-                <span id="counter" style="font-size:11px; margin: 0 10px;">0 / 0</span>
+                <span id="counter" class="info-label" style="margin: 0 8px;">0 / 0</span>
                 <button class="btn-win" onclick="nav(1)">SIG</button>
             </div>
-            <div id="fileName" style="font-size:10px; width:100px; text-align:right;"></div>
+            <div id="fileName" class="info-label" style="max-width:120px; text-align:right; overflow:hidden;"></div>
         </div>
     </div>
 
@@ -95,22 +122,18 @@
         const GITHUB_API = "https://api.github.com/repos/borfwashere/Images/contents/";
         let photos = [];
         let currentIdx = 0;
+        let isZoomed = false;
 
-        // --- PROTECCIÓN EXTRA ---
+        // --- BLOQUEO TOTAL DE CLIC DERECHO Y TECLAS ---
+        window.oncontextmenu = function() { return false; };
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
         document.addEventListener('keydown', (e) => {
-            // Bloquea F12, Ctrl+U, Ctrl+S, Ctrl+P
-            if (e.keyCode == 123 || (e.ctrlKey && [85, 83, 80].includes(e.keyCode))) {
+            if (e.keyCode == 123 || (e.ctrlKey && [85, 83, 73, 74].includes(e.keyCode))) {
                 e.preventDefault();
                 return false;
             }
         });
-
-        // Pantalla completa al primer click (Requerido por navegadores)
-        document.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => {});
-            }
-        }, { once: true });
 
         async function scan() {
             try {
@@ -119,7 +142,9 @@
                 photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
                               .map(f => ({ name: f.name, url: f.download_url }));
                 render();
-            } catch (e) { document.getElementById('status').innerText = "Error de acceso."; }
+            } catch (e) { 
+                document.getElementById('status').innerText = "Error de red."; 
+            }
         }
 
         function render() {
@@ -128,26 +153,49 @@
             photos.forEach((p, i) => {
                 const d = document.createElement('div');
                 d.className = 'img-item';
-                d.onclick = () => open(i);
+                d.onclick = () => openImg(i);
                 d.innerHTML = `<div class="thumb-container"><img src="${p.url}"></div><span class="img-name">${p.name}</span>`;
                 ev.appendChild(d);
             });
         }
 
-        function open(i) {
+        function openImg(i) {
             currentIdx = i;
+            isZoomed = false;
+            document.getElementById('photoViewer').classList.remove('zoomed');
             document.getElementById('activeImage').src = photos[currentIdx].url;
             document.getElementById('fileName').innerText = photos[currentIdx].name;
             document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
             document.getElementById('photoViewer').style.display = "flex";
         }
 
-        function closeViewer() { document.getElementById('photoViewer').style.display = "none"; }
+        function closeViewer() { 
+            document.getElementById('photoViewer').style.display = "none"; 
+            document.getElementById('activeImage').src = "";
+        }
 
         function nav(step) {
             currentIdx = (currentIdx + step + photos.length) % photos.length;
-            open(currentIdx);
+            openImg(currentIdx);
         }
+
+        function toggleZoom() {
+            isZoomed = !isZoomed;
+            const viewer = document.getElementById('photoViewer');
+            if (isZoomed) {
+                viewer.classList.add('zoomed');
+            } else {
+                viewer.classList.remove('zoomed');
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('photoViewer').style.display === "flex") {
+                if (e.key === "ArrowRight") nav(1);
+                if (e.key === "ArrowLeft") nav(-1);
+                if (e.key === "Escape") closeViewer();
+            }
+        });
 
         scan();
     </script>
