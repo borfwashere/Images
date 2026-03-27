@@ -9,13 +9,12 @@
             --win-gray: #c0c0c0; 
             --win-border-light: #ffffff; 
             --win-border-dark: #808080; 
-            --win-blue: #000080; 
-            /* Proporción fija del visor (puedes ajustar estos valores) */
-            --viewer-width: 700px; 
-            --viewer-height: 550px;
+            --win-blue-dark: #000080; 
+            --win-blue-light: #1084d0; /* El azul claro para el degradado estilo Matrix */
+            --viewer-width: 750px; 
+            --viewer-height: 580px;
         }
         
-        /* BLOQUEO TOTAL DE SELECCIÓN VISUAL (Como pediste, ya no se ve azul) */
         * { 
             margin: 0; padding: 0; box-sizing: border-box; 
             user-select: none; 
@@ -28,13 +27,13 @@
         body, html { 
             width: 100%; height: 100%; 
             font-family: 'Tahoma', sans-serif; 
-            background-color: #fff; /* Fondo blanco puro */
+            background-color: #fff; 
             overflow: hidden; 
             display: flex; flex-direction: column; 
             position: relative;
         }
 
-        /* Contenedor principal de la carpeta */
+        /* Explorador de archivos (Fondo Blanco) */
         #explorer { 
             flex: 1; 
             padding: 20px; 
@@ -43,10 +42,9 @@
             gap: 15px; 
             overflow-y: auto; 
             background: #fff;
-            z-index: 1; /* Fondo blanco */
+            z-index: 1;
         }
         
-        /* Items de archivos limpios (Hover sutil) */
         .file-item { 
             width: 110px; 
             text-align: center; 
@@ -58,85 +56,56 @@
             align-items: center;
         }
         
-        /* Hover elegante, sin bloques azules */
-        .file-item:hover .icon-plate {
-            border-color: var(--win-blue);
-        }
-        .file-item:hover .file-name {
-            color: var(--win-blue);
-            text-decoration: underline;
-        }
+        .file-item:hover .icon-plate { border-color: var(--win-blue-dark); }
+        .file-item:hover .file-name { color: var(--win-blue-dark); text-decoration: underline; }
         
         .icon-plate { 
-            width: 100px; 
-            height: 80px; 
+            width: 100px; height: 80px; 
             background: #fdfdfd; 
             border: 1px solid var(--win-border-dark); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
-            pointer-events: none;
+            display: flex; align-items: center; justify-content: center; 
+            overflow: hidden; pointer-events: none;
         }
         
-        .icon-plate img { 
-            max-width: 95%; 
-            max-height: 95%; 
-            object-fit: contain; 
-        }
-        
-        .file-name { 
-            font-size: 10px; 
-            margin-top: 5px; 
-            width: 100%;
-            display: block; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap; 
-            color: #000;
-        }
+        .icon-plate img { max-width: 95%; max-height: 95%; object-fit: contain; }
+        .file-name { font-size: 10px; margin-top: 5px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #000; }
 
-        /* --- NUEVA VENTANA DEL VISOR FLOTANTE --- */
+        /* --- VENTANA DEL VISOR CON DEGRADADO --- */
         #viewerWin { 
             position: fixed; 
-            /* Centrado absoluto */
             top: 50%; left: 50%;
             transform: translate(-50%, -50%); 
-            
-            /* Proporción fija */
             width: var(--viewer-width);
             height: var(--viewer-height);
-            
-            /* Capacidad de respuesta para pantallas pequeñas */
             max-width: 95vw;
             max-height: 90vh;
-            
             background: var(--win-gray);
-            border: 3px outset var(--win-border-light); /* Borde Win98 grueso */
+            border: 3px outset var(--win-border-light);
             display: none; 
             flex-direction: column; 
-            z-index: 1000; /* Encima de la carpeta */
-            box-shadow: 10px 10px 20px rgba(0,0,0,0.5); /* Sombra para dar profundidad */
+            z-index: 1000;
+            box-shadow: 8px 8px 25px rgba(0,0,0,0.6);
         }
 
         .win-title { 
-            background: var(--win-blue); 
+            /* EFECTO DEGRADADO MATRIX/WIN98 */
+            background: linear-gradient(90deg, var(--win-blue-dark) 0%, var(--win-blue-light) 100%);
             color: white; 
-            padding: 3px 8px; 
+            padding: 3px 4px 3px 8px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             font-weight: bold; 
             font-size: 12px; 
-            cursor: move; /* Indica que se puede mover (aunque no tenga drag activo) */
+            letter-spacing: 0.5px;
         }
         
         .close-btn { 
-            width: 18px; height: 16px; 
+            width: 16px; height: 14px; 
             background: var(--win-gray); 
             border: 2px outset #fff; 
             color: black; 
-            font-size: 10px; 
+            font-size: 9px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -147,33 +116,29 @@
 
         .win-body { 
             flex: 1; 
-            background: #000; /* Fondo negro para la foto */
-            overflow: hidden; /* No queremos scroll aquí */
+            background: #000; 
+            overflow: hidden; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            padding: 10px; /* Margen para que la foto no toque el borde */
+            padding: 5px;
+            border: 2px inset var(--win-border-dark); /* Borde hundido para la zona de la foto */
+            margin: 2px;
         }
         
-        #activeImg { 
-            max-width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; /* Mantiene proporción siempre */
-            pointer-events: none; /* Imposible guardar o arrastrar */
-        }
+        #activeImg { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
 
         .win-footer { 
-            padding: 8px 15px; 
+            padding: 6px 10px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             background: var(--win-gray); 
-            border-top: 2px solid var(--win-border-dark); 
         }
         
         .nav-btn { 
-            height: 25px; 
-            padding: 0 15px; 
+            height: 22px; 
+            padding: 0 12px; 
             background: var(--win-gray); 
             border: 2px outset #fff; 
             font-family: 'Tahoma'; 
@@ -188,21 +153,21 @@
 <body oncontextmenu="return false;">
 
     <div id="explorer">
-        <div style="color: #808080; padding: 20px; font-size: 11px;">Buscando fotos en el repositorio...</div>
+        <div style="color: #808080; padding: 20px; font-size: 11px;">Accediendo a la base de datos de Borsec...</div>
     </div>
 
     <div id="viewerWin">
         <div class="win-title">
-            <span id="winTitleText">Borf Viewer</span>
+            <span id="winTitleText">Image Viewer</span>
             <div class="close-btn" onclick="closeViewer()">X</div>
         </div>
         <div class="win-body">
             <img id="activeImg" src="">
         </div>
         <div class="win-footer">
-            <button class="nav-btn" onclick="nav(-1)">ANT</button>
+            <button class="nav-btn" onclick="nav(-1)">Anterior</button>
             <span id="counter" class="counter-label">0 / 0</span>
-            <button class="nav-btn" onclick="nav(1)">SIG</button>
+            <button class="nav-btn" onclick="nav(1)">Siguiente</button>
         </div>
     </div>
 
@@ -215,22 +180,17 @@
             try {
                 const res = await fetch(API);
                 const data = await res.json();
-                // Filtramos archivos de imagen
                 photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
                              .map(f => ({ name: f.name, url: f.download_url }));
                 render();
             } catch (e) {
-                document.getElementById('explorer').innerHTML = "Error de conexión con GitHub.";
+                document.getElementById('explorer').innerHTML = "Error cargando archivos.";
             }
         }
 
         function render() {
             const exp = document.getElementById('explorer');
             exp.innerHTML = "";
-            if (photos.length === 0) {
-                exp.innerHTML = "<div style='padding:20px; color:#000;'>No hay imágenes en este repositorio.</div>";
-                return;
-            }
             photos.forEach((p, i) => {
                 const item = document.createElement('div');
                 item.className = 'file-item';
@@ -249,7 +209,6 @@
             img.src = photos[currentIdx].url;
             document.getElementById('winTitleText').innerText = photos[currentIdx].name;
             document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
-            // Mostramos la ventana flotante
             document.getElementById('viewerWin').style.display = "flex";
         }
 
@@ -263,7 +222,6 @@
             openViewer(currentIdx);
         }
 
-        // Bloqueo de teclado (Esc para cerrar, flechas para navegar)
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('viewerWin').style.display === "flex") {
                 if (e.key === "ArrowRight") nav(1);
@@ -272,7 +230,6 @@
             }
         });
 
-        // Bloqueo total de click derecho
         document.addEventListener('contextmenu', e => e.preventDefault());
 
         init();
