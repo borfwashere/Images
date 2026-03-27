@@ -2,38 +2,253 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borf Photo System</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background: #fff; font-family: 'Tahoma', sans-serif; padding: 10px; overflow-x: hidden; }
-        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
-        .item { width: 100px; cursor: pointer; text-align: center; }
-        .item:hover .thumb { border-color: #000080; background: #e5e5ff; }
-        .item:hover .name { background: #000080; color: #fff; }
-        .thumb { width: 100px; height: 80px; border: 1px solid #808080; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f0f0f0; transition: 0.1s; }
-        .thumb img { max-width: 90%; max-height: 90%; object-fit: contain; pointer-events: none; image-rendering: pixelated; }
-        .name { font-size: 10px; margin-top: 4px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px; }
+        :root { 
+            --win-gray: #c0c0c0; 
+            --win-border-light: #ffffff; 
+            --win-border-dark: #808080; 
+            --win-blue: #000080; 
+        }
+        
+        /* BLOQUEO TOTAL DE SELECCIÓN VISUAL */
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            user-select: none; 
+            -webkit-user-select: none;
+            -webkit-user-drag: none; 
+            outline: none; /* Elimina el cuadro azul al hacer click */
+            -webkit-tap-highlight-color: transparent; /* Elimina destello en móviles */
+        }
+        
+        body, html { 
+            width: 100%; height: 100%; 
+            font-family: 'Tahoma', sans-serif; 
+            background-color: #fff; 
+            overflow: hidden; 
+            display: flex; flex-direction: column; 
+        }
+
+        /* Contenedor principal (Blanco como una carpeta real) */
+        #explorer { 
+            flex: 1; 
+            padding: 15px; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+            gap: 10px; 
+            overflow-y: auto; 
+            background: #fff;
+        }
+        
+        /* Estilo de los items de archivos */
+        .file-item { 
+            width: 105px; 
+            text-align: center; 
+            cursor: pointer; 
+            padding: 4px;
+            border: 1px solid transparent; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Hover estilo Win98: Solo un borde punteado o cambio de color suave, sin bloques azules feos */
+        .file-item:hover .icon-plate {
+            border-color: var(--win-blue);
+        }
+        .file-item:hover .file-name {
+            color: var(--win-blue);
+            text-decoration: underline;
+        }
+        
+        .icon-plate { 
+            width: 90px; 
+            height: 70px; 
+            background: #fdfdfd; 
+            border: 1px solid var(--win-border-dark); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            pointer-events: none;
+            transition: border-color 0.1s;
+        }
+        
+        .icon-plate img { 
+            max-width: 95%; 
+            max-height: 95%; 
+            object-fit: contain; 
+            image-rendering: auto;
+        }
+        
+        .file-name { 
+            font-size: 10px; 
+            margin-top: 5px; 
+            width: 100%;
+            display: block; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+            color: #000;
+        }
+
+        /* --- VENTANA DEL VISOR --- */
+        #viewerWin { 
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; 
+            background: var(--win-gray);
+            display: none; 
+            flex-direction: column; 
+            z-index: 1000;
+        }
+
+        .win-title { 
+            background: var(--win-blue); 
+            color: white; 
+            padding: 4px 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-weight: bold; 
+            font-size: 12px; 
+        }
+        
+        .close-btn { 
+            width: 18px; height: 16px; 
+            background: var(--win-gray); 
+            border: 2px outset #fff; 
+            color: black; 
+            font-size: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+        }
+        .close-btn:active { border: 2px inset #fff; padding: 1px 0 0 1px; }
+
+        .win-body { 
+            flex: 1; 
+            background: #000; 
+            overflow: auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer;
+        }
+        
+        #activeImg { 
+            max-width: 100%; 
+            max-height: 100%; 
+            pointer-events: none;
+        }
+
+        .win-footer { 
+            padding: 8px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--win-gray); 
+            border-top: 2px solid var(--win-border-dark); 
+        }
+        
+        .nav-btn { 
+            height: 24px; 
+            padding: 0 12px; 
+            background: var(--win-gray); 
+            border: 2px outset #fff; 
+            font-family: 'Tahoma'; 
+            font-size: 11px; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        .nav-btn:active { border: 2px inset #fff; }
     </style>
 </head>
 <body oncontextmenu="return false;">
-    <div id="grid"></div>
+
+    <div id="explorer">
+        <div style="color: #808080; padding: 20px; font-size: 11px;">Buscando archivos...</div>
+    </div>
+
+    <div id="viewerWin">
+        <div class="win-title">
+            <span id="winTitleText">Borf Viewer</span>
+            <div class="close-btn" onclick="closeViewer()">X</div>
+        </div>
+        <div class="win-body" onclick="nav(1)">
+            <img id="activeImg" src="">
+        </div>
+        <div class="win-footer">
+            <button class="nav-btn" onclick="nav(-1)">ANT</button>
+            <span id="counter" style="font-size: 11px; font-weight: bold; color: #000;">0 / 0</span>
+            <button class="nav-btn" onclick="nav(1)">SIG</button>
+        </div>
+    </div>
+
     <script>
         const API = "https://api.github.com/repos/borfwashere/Images/contents/";
-        async function load() {
+        let photos = [];
+        let currentIdx = 0;
+
+        async function init() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
-                const photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
-                const container = document.getElementById('grid');
-                photos.forEach(p => {
-                    const d = document.createElement('div');
-                    d.className = 'item';
-                    d.onclick = () => window.parent.postMessage({action: 'view', url: p.download_url, name: p.name}, '*');
-                    d.innerHTML = `<div class="thumb"><img src="${p.download_url}"></div><span class="name">${p.name}</span>`;
-                    container.appendChild(d);
-                });
-            } catch (e) { console.error("Error cargando repositorio"); }
+                photos = data.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+                             .map(f => ({ name: f.name, url: f.download_url }));
+                render();
+            } catch (e) {
+                document.getElementById('explorer').innerHTML = "Error de conexión.";
+            }
         }
-        load();
+
+        function render() {
+            const exp = document.getElementById('explorer');
+            exp.innerHTML = "";
+            photos.forEach((p, i) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.onclick = () => openViewer(i);
+                item.innerHTML = `
+                    <div class="icon-plate"><img src="${p.url}"></div>
+                    <span class="file-name">${p.name}</span>
+                `;
+                exp.appendChild(item);
+            });
+        }
+
+        function openViewer(index) {
+            currentIdx = index;
+            const img = document.getElementById('activeImg');
+            img.src = photos[currentIdx].url;
+            document.getElementById('winTitleText').innerText = photos[currentIdx].name;
+            document.getElementById('counter').innerText = `${currentIdx + 1} / ${photos.length}`;
+            document.getElementById('viewerWin').style.display = "flex";
+        }
+
+        function closeViewer() {
+            document.getElementById('viewerWin').style.display = "none";
+            document.getElementById('activeImg').src = "";
+        }
+
+        function nav(step) {
+            currentIdx = (currentIdx + step + photos.length) % photos.length;
+            openViewer(currentIdx);
+        }
+
+        // Bloqueo de teclado y click derecho
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('viewerWin').style.display === "flex") {
+                if (e.key === "ArrowRight") nav(1);
+                if (e.key === "ArrowLeft") nav(-1);
+                if (e.key === "Escape") closeViewer();
+            }
+        });
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        init();
     </script>
 </body>
 </html>
